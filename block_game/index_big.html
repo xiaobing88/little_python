@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>my little game</title>
+		<style media="screen">
+			canvas{
+				border: 2px black solid;
+			}
+		</style>
+		<script src='./game.js' ></script>
+	</head>
+	<body>
+	<!-- <canvas id="id-canvas" width="450" height="300"></canvas> -->
+	<canvas id="id-canvas" width="800" height="500"></canvas>
+<script>
+var log = console.log.bind(console)
+var imagefrompath =function(path){
+	var img = new Image()
+	img.src = path
+	// log(img)
+	return img
+}
+var Paddle = function(){
+	var image =imagefrompath('./image/borad.png')
+	var o  = {
+		image: image,
+		x: 180,
+		y: 450,
+		wid: 250,
+		hei: 20,
+		speed: 10,
+	}
+	var paddle = o
+	o.move = function(x){
+		if (x < 0){
+			x =0
+		}
+		if (x > 800 - o.image.width){
+			x = 800 - o.image.width
+		}
+		o.x = x
+	}
+	o.moveleft = function(){
+		o.move(paddle.x - paddle.speed)
+	}
+	o.moveright = function(){
+		o.move(paddle.x + paddle.speed)
+	}
+	o.collide = function(ball){
+		if (ball.y + ball.image.height  > o.y){
+			if (ball.x > o.x && ball.x < o.x + o.image.width){
+				// log('相撞')
+				return true
+			}
+		}
+		return false
+	}
+	return o
+}
+var Ball = function(){
+	var image =imagefrompath('./image/ball.png')
+	var o  = {
+		image: image,
+		x: 180,
+		y: 190,
+		wid: 40,
+		hei: 40,
+		speedX: 5,
+		speedY: 5,
+		fired: false,
+	}
+	o.fire = function(){
+		o.fired = true
+	}
+	o.move = function(){
+		if (o.fired){
+			// log('move')
+			if (o.x < 0 || o.x > 800){
+				o.speedX = -o.speedX
+			}
+			// if (o.y < 0 || o.y > 500){
+			if (o.y < 0){
+				o.speedY = -o.speedY
+			}
+			//move
+			o.x += o.speedX
+			o.y += o.speedY
+		}
+		
+	}
+	o.rebound = function(){
+		o.speedY *= -1
+	}
+	return o
+}
+
+var rectIntersetcts = function(a,b){
+	var o = a
+	if (b.y > o.y && b.y < o.y + o.image.height){
+		if (b.x > o.x && b.x < o.x + o.image.width){
+			// log('碰撞')
+			return true
+		}
+	}
+	return false
+}
+var Block = function(){
+	var image =imagefrompath('./image/block.png')
+	var o  = {
+		image: image,
+		x: 100,
+		y: 100,
+		w: 50,
+		h: 20,
+		alive: true,
+		// wid: 40,
+		// hei: 40,
+	}
+	o.kill = function(){
+		o.alive = false
+	}
+	o.collide = function(b){
+		return o.alive &&(rectIntersetcts(o,b) || rectIntersetcts(b,o))
+	}
+	return o
+}
+
+
+var __main__ = function(){
+	var game = little_game(60)
+
+	var paddle = Paddle()
+	var ball = Ball()
+	var blocks = []
+	for (var i = 0; i < 5; i++) {
+		var b = Block()
+		//设置xy坐标
+		b.x = i * 170
+		b.y = 50
+		blocks.push(b)
+	}
+	
+	var paused = false
+	// 注册事件
+	game.registerAction('a', function(){
+		paddle.moveleft()
+	})
+	game.registerAction('ArrowLeft', function(){
+		paddle.moveleft()
+	})
+	game.registerAction('d', function(){
+		paddle.moveright()
+	})
+	game.registerAction('ArrowRight', function(){
+		paddle.moveright()
+	})
+	// 球的事件
+	game.registerAction(' ', function(){
+		ball.fire()
+	})
+	game.registerAction('Control', function(){
+		paused = !paused
+	})
+	game.update = function(){
+		//暂停
+		if (paused){
+			return
+		}
+		ball.move()
+		// 判断相撞
+		if (paddle.collide(ball)){
+			ball.rebound()
+		}
+		// 判断ball和blocks碰撞
+		for (var i = 0; i <  blocks.length; i++) {
+			var block = blocks[i]
+			if (block.collide(ball)){
+				// log('block bengbeng')
+				block.kill()
+				ball.rebound()
+			}
+		}
+		//lose
+		if ((ball.y - ball.image.height) > paddle.y){
+			log('you lose')
+			// alert('game over')
+		}
+	}
+	game.draw = function(){
+		//draw
+		game.drawImage(paddle)
+		game.drawImage(ball)
+		// draw blocks
+		for (var i = 0; i <  blocks.length; i++) {
+			var block = blocks[i]
+			if (block.alive) {
+				game.drawImage(block)
+			}
+		}
+	}
+}
+
+__main__()
+</script>
+<p>空格：小球秋发射</p>
+<p>a/方向左键 ：平板左移</p>
+<p>d/方向右键 ：平板右移</p>
+<p>Ctrl键：小球秋暂停</p>
+	</body>
+</html>
